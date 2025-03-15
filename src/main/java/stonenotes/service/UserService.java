@@ -3,6 +3,7 @@ package stonenotes.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import stonenotes.dto.UserRegistrationDto;
+import stonenotes.exception.EmailAlreadyExistsException;
 import stonenotes.model.User;
 import stonenotes.repository.UserRepository;
 
@@ -17,6 +18,10 @@ public class UserService {
     }
 
     public void registerUser(UserRegistrationDto userDto) {
+        if(userRepository.existsByEmail(userDto.getEmail())) {
+            throw new EmailAlreadyExistsException("Email already registered: "+userDto.getEmail());
+        }
+
         User user = new User();
         user.setUsername(userDto.getEmail());
         user.setEmail(userDto.getEmail());

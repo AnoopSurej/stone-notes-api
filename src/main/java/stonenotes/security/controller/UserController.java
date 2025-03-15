@@ -1,10 +1,10 @@
 package stonenotes.security.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import stonenotes.dto.UserLoginDto;
 import stonenotes.dto.UserRegistrationDto;
+import stonenotes.exception.EmailAlreadyExistsException;
 import stonenotes.security.jwt.JwtTokenProvider;
-import stonenotes.security.service.UserDetailsServiceImpl;
 import stonenotes.service.UserService;
 
 import java.util.Collections;
@@ -35,14 +35,17 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody UserRegistrationDto userRegistrationDto) {
-        System.out.println("===== Request received /register =====");
-        userService.registerUser(userRegistrationDto);
-        return ResponseEntity.ok("User registered successfully");
+    public ResponseEntity<String> registerUser(@Valid @RequestBody UserRegistrationDto userRegistrationDto) {
+        try {
+            userService.registerUser(userRegistrationDto);
+            return ResponseEntity.ok("User registered successfully");
+        } catch (EmailAlreadyExistsException e) {
+            throw e;
+        }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UserLoginDto userLoginDto) {
+    public ResponseEntity<?> login(@Valid @RequestBody UserLoginDto userLoginDto) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userLoginDto.getEmail(), userLoginDto.getPassword()));
         UserDetails userDetails = userDetailsService.loadUserByUsername(userLoginDto.getEmail());
         String token = jwtTokenProvider.generateToken(userDetails);
