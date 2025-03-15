@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class StonenotesApplication {
+public class StoneNotesApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(StonenotesApplication.class, args);
+		SpringApplication.run(StoneNotesApplication.class, args);
 	}
 
 }
