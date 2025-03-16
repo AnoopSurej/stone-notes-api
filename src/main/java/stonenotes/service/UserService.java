@@ -23,7 +23,6 @@ public class UserService {
         }
 
         User user = new User();
-        user.setUsername(userDto.getEmail());
         user.setEmail(userDto.getEmail());
         user.setFirstName(userDto.getFirstName());
         user.setLastName(userDto.getLastName());

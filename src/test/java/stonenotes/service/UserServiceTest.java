@@ -1,5 +1,6 @@
 package stonenotes.service;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -16,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class UserServiceTest {
+    private AutoCloseable closeable;
     @Mock
     private UserRepository userRepository;
     @Mock
@@ -26,10 +28,15 @@ public class UserServiceTest {
 
     @BeforeEach
     void setup() {
-        MockitoAnnotations.openMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
     }
 
-    private User captureUser(UserRegistrationDto userRegistrationDto) {
+    @AfterEach
+    void teardown() throws Exception {
+        closeable.close();
+    }
+
+    private User captureUser() {
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(captor.capture());
         return captor.getValue();
@@ -68,7 +75,7 @@ public class UserServiceTest {
         verify(userRepository, times(1)).save(any(User.class));
         verify(passwordEncoder, times(1)).encode(password);
 
-        User capturedUser = captureUser(userRegistrationDto);
+        User capturedUser = captureUser();
         assertEquals("encodedPassword", capturedUser.getPassword());
         assertEquals(email, capturedUser.getEmail());
     }
