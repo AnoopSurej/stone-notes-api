@@ -11,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import stonenotes.common.ApiResponse;
 import stonenotes.dto.UserLoginDto;
 import stonenotes.dto.UserRegistrationDto;
 import stonenotes.exception.EmailAlreadyExistsException;
@@ -19,8 +20,7 @@ import stonenotes.service.UserService;
 
 import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class UserControllerTest {
@@ -56,10 +56,16 @@ public class UserControllerTest {
                 "last"
         );
 
-        ResponseEntity<String> response = userController.registerUser(userRegistrationDto);
+        ResponseEntity<ApiResponse<String>> response = userController.registerUser(userRegistrationDto);
+        ApiResponse<String> responseBody = response.getBody();
 
+        assertNotNull(responseBody);
         assertEquals(200, response.getStatusCode().value());
-        assertEquals("User registered successfully", response.getBody());
+        assertTrue(responseBody.isSuccess());
+        assertEquals("Registration successful", responseBody.getMessage());
+        assertEquals("User registered successfully", responseBody.getData());
+        assertEquals(200, responseBody.getStatus());
+
         verify(userService,times(1)).registerUser(userRegistrationDto);
 
     }
@@ -92,10 +98,15 @@ public class UserControllerTest {
         when(userDetailsService.loadUserByUsername(userLoginDto.getEmail())).thenReturn(userDetails);
         when(jwtTokenProvider.generateToken(userDetails)).thenReturn("mocked-jwt-token");
 
-        ResponseEntity<?> response = userController.login(userLoginDto);
+        ResponseEntity<ApiResponse<String>> response = userController.login(userLoginDto);
+        ApiResponse<String> responseBody = response.getBody();
 
+        assertNotNull(responseBody);
         assertEquals(200, response.getStatusCode().value());
-        assertEquals(Collections.singletonMap("token","mocked-jwt-token"), response.getBody());
+        assertTrue(responseBody.isSuccess());
+        assertEquals("mocked-jwt-token", responseBody.getData());
+        assertEquals("Login successful", responseBody.getMessage());
+        assertEquals(200, responseBody.getStatus());
 
         verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(userDetailsService, times(1)).loadUserByUsername(userLoginDto.getEmail());
