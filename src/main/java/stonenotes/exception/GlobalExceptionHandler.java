@@ -25,7 +25,8 @@ public class GlobalExceptionHandler {
         for (FieldError error: ex.getBindingResult().getFieldErrors()) {
             errors.put(error.getField(), error.getDefaultMessage());
         }
-        ApiResponse<Map<String, String>> response = new ApiResponse<>(errors, "Validation failed", HttpStatus.BAD_REQUEST.value());
+        ApiResponse<Map<String, String>> response = ApiResponse.error("Validation failed", HttpStatus.BAD_REQUEST.value());
+        response.setData(errors);
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 }
