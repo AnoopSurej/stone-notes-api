@@ -1,11 +1,10 @@
 package stonenotes.security.controller;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,13 +17,11 @@ import stonenotes.exception.EmailAlreadyExistsException;
 import stonenotes.security.jwt.JwtTokenProvider;
 import stonenotes.service.UserService;
 
-import java.util.Collections;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 public class UserControllerTest {
-    private AutoCloseable closeable;
     @Mock
     private UserService userService;
     @Mock
@@ -36,16 +33,6 @@ public class UserControllerTest {
 
     @InjectMocks
     private UserController userController;
-
-    @BeforeEach
-    void setup() {
-        closeable = MockitoAnnotations.openMocks(this);
-    }
-
-    @AfterEach
-    void tearDown() throws Exception {
-        closeable.close();
-    }
 
     @Test
     void testRegisterUser_Success() {

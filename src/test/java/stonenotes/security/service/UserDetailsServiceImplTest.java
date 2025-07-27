@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import stonenotes.model.User;
 import stonenotes.repository.UserRepository;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
@@ -39,7 +41,7 @@ public class UserDetailsServiceImplTest {
         mockUser.setEmail(email);
         mockUser.setPassword("password");
 
-        when(userRepository.findByEmail(email)).thenReturn(mockUser);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
@@ -51,7 +53,7 @@ public class UserDetailsServiceImplTest {
     @Test
     void testLoadByUsername_UserNotFound() {
         String email = "notfound@example.com";
-        when(userRepository.findByEmail(email)).thenReturn(null);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
 
         UsernameNotFoundException ex = assertThrows(
                 UsernameNotFoundException.class,

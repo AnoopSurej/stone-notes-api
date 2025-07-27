@@ -1,5 +1,6 @@
 package stonenotes.service;
 
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import stonenotes.dto.UserRegistrationDto;
@@ -29,5 +30,11 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
 
         userRepository.save(user);
+    }
+
+    public Long getUserIdByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 }
