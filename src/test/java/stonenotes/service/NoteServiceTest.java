@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.dto.NoteResponseDto;
 import stonenotes.model.Note;
@@ -13,6 +14,8 @@ import stonenotes.repository.NoteRepository;
 import stonenotes.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -95,5 +98,82 @@ public class NoteServiceTest {
         assertThatThrownBy(() -> noteService.createNote(createNoteDto, userId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Title cannot be blank");
+    }
+
+    @Test
+    void shouldReturnUserNotesOrderedByCreatedAtDesc() {
+        Long userId = 1L;
+        User user = new User();
+        user.setEmail("test@example.com");
+
+        Note note1 = new Note();
+        note1.setId(1L);
+        note1.setTitle("First Note");
+        note1.setContent("First content");
+        note1.setUser(user);
+        note1.setCreatedAt(LocalDateTime.now().minusHours(2));
+        note1.setUpdatedAt(LocalDateTime.now().minusHours(2));
+
+        Note note2 = new Note();
+        note2.setId(1L);
+        note2.setTitle("Second Note");
+        note2.setContent("Second content");
+        note2.setUser(user);
+        note2.setCreatedAt(LocalDateTime.now().minusHours(1));
+        note2.setUpdatedAt(LocalDateTime.now().minusHours(2));
+
+        List<Note> notes = Arrays.asList(note2, note1);
+
+        when(noteRepository.findByUserIdOrderByCreatedAtDesc(userId)).thenReturn(notes);
+
+        List<NoteResponseDto> result = noteService.findNotesByUserId(userId);
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getTitle()).isEqualTo("Second Note");
+        assertThat(result.get(1).getTitle()).isEqualTo("First Note");
+
+        verify(noteRepository).findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    @Test
+    void shouldReturnPaginatedUserNotesOrderedByCreatedAtDesc() {
+        Long userId = 1L;
+        Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        User user = new User();
+        user.setEmail("user@example.com");
+
+        Note note1 = new Note();
+        note1.setId(1L);
+        note1.setTitle("First Note");
+        note1.setContent("First content");
+        note1.setUser(user);
+        note1.setCreatedAt(LocalDateTime.now().minusHours(2));
+        note1.setUpdatedAt(LocalDateTime.now().minusHours(2));
+
+        Note note2 = new Note();
+        note2.setId(2L);
+        note2.setTitle("Second Note");
+        note2.setContent("Second content");
+        note2.setUser(user);
+        note2.setCreatedAt(LocalDateTime.now().minusHours(1));
+        note2.setUpdatedAt(LocalDateTime.now().minusHours(1));
+
+        List<Note> noteList = Arrays.asList(note2, note1);
+        Page<Note> notePage = new PageImpl<>(noteList, pageable, 5);
+
+        when(noteRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)).thenReturn(notePage);
+
+        Page<NoteResponseDto> result = noteService.findNotesByUserId(userId, pageable);
+
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getTotalElements()).isEqualTo(5);
+        assertThat(result.getTotalPages()).isEqualTo(3);
+        assertThat(result.getNumber()).isEqualTo(0);
+        assertThat(result.getSize()).isEqualTo(2);
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("Second Note");
+        assertThat(result.getContent().get(1).getTitle()).isEqualTo("First Note");
+
+        verify(noteRepository).findByUserIdOrderByCreatedAtDesc(userId, pageable);
     }
 }

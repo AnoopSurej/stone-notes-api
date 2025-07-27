@@ -1,5 +1,7 @@
 package stonenotes.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.dto.NoteResponseDto;
@@ -7,6 +9,9 @@ import stonenotes.model.Note;
 import stonenotes.model.User;
 import stonenotes.repository.NoteRepository;
 import stonenotes.repository.UserRepository;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class NoteService {
@@ -34,6 +39,18 @@ public class NoteService {
         Note savedNote = noteRepository.save(note);
 
         return convertToResponseDto(savedNote);
+    }
+
+    public List<NoteResponseDto> findNotesByUserId(Long userId) {
+        List<Note> notes = noteRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return notes.stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    public Page<NoteResponseDto> findNotesByUserId(Long userId, Pageable pageable) {
+        Page<Note> notePage = noteRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        return notePage.map(this::convertToResponseDto);
     }
 
     private NoteResponseDto convertToResponseDto(Note note) {

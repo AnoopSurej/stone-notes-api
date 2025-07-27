@@ -8,6 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import stonenotes.model.User;
 import stonenotes.model.Note;
 
@@ -36,6 +40,14 @@ class NoteRepositoryTest {
         note.setContent(content);
         note.setUser(user);
         return note;
+    }
+
+    private Note createAndSaveNote(String title, String content, User user) {
+        Note note = new Note();
+        note.setTitle(title);
+        note.setContent(content);
+        note.setUser(user);
+        return testEntityManager.persistAndFlush(note);
     }
 
     @Test
@@ -107,5 +119,40 @@ class NoteRepositoryTest {
         Optional<Note> foundNote = noteRepository.findByIdAndUserId(note.getId(), user2.getId());
 
         assertThat(foundNote).isEmpty();
+    }
+
+    @Test
+    void shouldReturnPaginatedNotesOrderedByCreatedAtDesc() throws InterruptedException {
+        User user = new User();
+        user.setEmail("user@example.com");
+        user.setFirstName("First");
+        user.setLastName("Last");
+        user.setPassword("test_password");
+        user = testEntityManager.persistAndFlush(user);
+
+        Note note1 = createAndSaveNote("Note 1", "Content 1", user);
+        Thread.sleep(10);
+        Note note2 = createAndSaveNote("Note 2", "Content 2", user);
+        Thread.sleep(10);
+        Note note3 = createAndSaveNote("Note 3", "Content 3", user);
+        Thread.sleep(10);
+        Note note4 = createAndSaveNote("Note 4", "Content 4", user);
+        Thread.sleep(10);
+        Note note5 = createAndSaveNote("Note 5", "Content 5", user);
+        Thread.sleep(10);
+
+        Pageable pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        Page<Note> result = noteRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable);
+
+        assertThat(result.getContent()).hasSize(3);
+        assertThat(result.getTotalElements()).isEqualTo(5);
+        assertThat(result.getTotalPages()).isEqualTo(2);
+        assertThat(result.getNumber()).isEqualTo(0);
+        assertThat(result.getSize()).isEqualTo(3);
+
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("Note 5");
+        assertThat(result.getContent().get(1).getTitle()).isEqualTo("Note 4");
+        assertThat(result.getContent().get(2).getTitle()).isEqualTo("Note 3");
     }
 }

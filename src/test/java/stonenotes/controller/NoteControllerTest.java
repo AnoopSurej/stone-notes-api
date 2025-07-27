@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -15,6 +16,8 @@ import stonenotes.service.NoteService;
 import stonenotes.service.UserService;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -57,6 +60,46 @@ public class NoteControllerTest {
 
         verify(userService, times(1)).getUserIdByEmail(email);
         verify(noteService, times(1)).createNote(dto, userId);
+    }
+
+    @Test
+    void shouldReturnPaginatedNotesSuccessfully() {
+        String email = "user@example.com";
+        Long userId = 1L;
+        Authentication auth = mock(Authentication.class);
+        Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        NoteResponseDto note1 = new NoteResponseDto(1L, "First Note", "First content",
+                LocalDateTime.now().minusHours(2), LocalDateTime.now().minusHours(2));
+        NoteResponseDto note2 = new NoteResponseDto(2L, "Second Note", "Second content",
+                LocalDateTime.now().minusHours(1), LocalDateTime.now().minusHours(1));
+
+        List<NoteResponseDto> noteList = Arrays.asList(note2, note1);
+        Page<NoteResponseDto> notePage = new PageImpl<>(noteList, pageable, 5);
+
+        when(auth.getName()).thenReturn(email);
+        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(noteService.findNotesByUserId(userId, pageable)).thenReturn(notePage);
+
+        ResponseEntity<ApiResponse<Page<NoteResponseDto>>> response = noteController.getNotes(
+                auth, 0, 2, "createdAt", "desc"
+        );
+        ApiResponse<Page<NoteResponseDto>> responseBody = response.getBody();
+
+        assertNotNull(responseBody);
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(responseBody.isSuccess());
+        assertEquals("Notes retrieved successfully", responseBody.getMessage());
+
+        Page<NoteResponseDto> resultPage = responseBody.getData();
+        assertEquals(2, resultPage.getContent().size());
+        assertEquals(5, resultPage.getTotalElements());
+        assertEquals(3, resultPage.getTotalPages());
+        assertEquals(0, resultPage.getNumber());
+        assertEquals("Second Note", resultPage.getContent().get(0).getTitle());
+
+        verify(userService, times(1)).getUserIdByEmail(email);
+        verify(noteService, times(1)).findNotesByUserId(userId, pageable);
     }
 
     @Test
