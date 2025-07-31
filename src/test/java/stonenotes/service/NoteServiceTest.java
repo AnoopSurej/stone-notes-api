@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
+import stonenotes.builders.UserBuilder;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.dto.NoteResponseDto;
 import stonenotes.exception.NoteNotFoundException;
@@ -44,8 +45,7 @@ public class NoteServiceTest {
         createNoteDto.setTitle("Test Note");
         createNoteDto.setContent("Test Content");
 
-        User user = new User();
-        user.setEmail("test@example.com");
+        User user = UserBuilder.aUser().build();
 
         Note savedNote = new Note();
         savedNote.setId(1L);
@@ -105,8 +105,7 @@ public class NoteServiceTest {
     @Test
     void shouldReturnUserNotesOrderedByCreatedAtDesc() {
         Long userId = 1L;
-        User user = new User();
-        user.setEmail("test@example.com");
+        User user = UserBuilder.aUser().build();
 
         Note note1 = new Note();
         note1.setId(1L);
@@ -155,8 +154,7 @@ public class NoteServiceTest {
         Long userId = 1L;
         Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        User user = new User();
-        user.setEmail("user@example.com");
+        User user = UserBuilder.aUser().build();
 
         Note note1 = new Note();
         note1.setId(1L);
@@ -196,8 +194,7 @@ public class NoteServiceTest {
     void shouldReturnSingleNote() {
         Long userId = 1L;
 
-        User user = new User();
-        user.setEmail("user@example.com");
+        User user = UserBuilder.aUser().build();
 
         Note note = new Note();
         note.setUser(user);

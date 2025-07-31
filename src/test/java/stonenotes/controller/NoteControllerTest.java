@@ -13,7 +13,6 @@ import stonenotes.common.ApiResponse;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.dto.NoteResponseDto;
 import stonenotes.exception.NoteNotFoundException;
-import stonenotes.model.User;
 import stonenotes.service.NoteService;
 import stonenotes.service.UserService;
 
@@ -177,9 +176,6 @@ public class NoteControllerTest {
         Long userId = 1L;
         Authentication auth = mock(Authentication.class);
 
-        User user = new User();
-        user.setEmail(email);
-
         Long noteId = 2L;
         NoteResponseDto dto = new NoteResponseDto(noteId, "Note Title", "Note content", LocalDateTime.now(), LocalDateTime.now());
 
@@ -211,9 +207,6 @@ public class NoteControllerTest {
         String email = "user@example.com";
         Long userId = 1L;
         Authentication auth = mock(Authentication.class);
-
-        User user = new User();
-        user.setEmail(email);
 
         Long noteId = 2L;
 

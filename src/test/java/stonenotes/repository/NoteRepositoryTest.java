@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import stonenotes.builders.UserBuilder;
 import stonenotes.model.User;
 import stonenotes.model.Note;
 
@@ -42,18 +43,18 @@ class NoteRepositoryTest {
         return note;
     }
 
-    private Note createAndSaveNote(String title, String content, User user) {
+    private void createAndSaveNote(String title, String content, User user) {
         Note note = new Note();
         note.setTitle(title);
         note.setContent(content);
         note.setUser(user);
-        return testEntityManager.persistAndFlush(note);
+        testEntityManager.persistAndFlush(note);
     }
 
     @Test
     void shouldFindNotesByUserIdOrderedByCreatedAtDesc() throws InterruptedException {
         // Given
-        User user = createUser("test@example.com", "test_password", "Test", "User");
+        User user = UserBuilder.aUser().build();
         testEntityManager.persistAndFlush(user);
 
         Note note1 = createNote("First Note", "Content 1", user);
@@ -74,8 +75,8 @@ class NoteRepositoryTest {
     @Test
     void shouldOnlyReturnNotesForSpecificUser() {
         // Given
-        User user1 = createUser("user1@example.com", "test_password", "User", "One");
-        User user2 = createUser("user2@example.com", "test_password", "User", "Two");
+        User user1 = UserBuilder.aUser().withEmail("user1@example.com").build();
+        User user2 = UserBuilder.aUser().withEmail("user2@example.com").build();
         testEntityManager.persistAndFlush(user1);
         testEntityManager.persistAndFlush(user2);
 
@@ -94,7 +95,7 @@ class NoteRepositoryTest {
 
     @Test
     void shouldFindNoteByIdAndUserId() {
-        User user = createUser("test@example.com", "test_password", "Test", "User");
+        User user = UserBuilder.aUser().build();
         testEntityManager.persistAndFlush(user);
 
         Note note = createNote("Test Note", "Content", user);
@@ -108,8 +109,8 @@ class NoteRepositoryTest {
 
     @Test
     void shouldNotFindNoteForDifferentUser() {
-        User user1 = createUser("user1@example.com", "password", "User", "One");
-        User user2 = createUser("user2@example.com", "password", "User", "Two");
+        User user1 = UserBuilder.aUser().withEmail("user1@example.com").build();
+        User user2 = UserBuilder.aUser().withEmail("user2@example.com").build();
         testEntityManager.persistAndFlush(user1);
         testEntityManager.persistAndFlush(user2);
 
@@ -123,22 +124,18 @@ class NoteRepositoryTest {
 
     @Test
     void shouldReturnPaginatedNotesOrderedByCreatedAtDesc() throws InterruptedException {
-        User user = new User();
-        user.setEmail("user@example.com");
-        user.setFirstName("First");
-        user.setLastName("Last");
-        user.setPassword("test_password");
+        User user = UserBuilder.aUser().build();
         user = testEntityManager.persistAndFlush(user);
 
-        Note note1 = createAndSaveNote("Note 1", "Content 1", user);
+        createAndSaveNote("Note 1", "Content 1", user);
         Thread.sleep(10);
-        Note note2 = createAndSaveNote("Note 2", "Content 2", user);
+        createAndSaveNote("Note 2", "Content 2", user);
         Thread.sleep(10);
-        Note note3 = createAndSaveNote("Note 3", "Content 3", user);
+        createAndSaveNote("Note 3", "Content 3", user);
         Thread.sleep(10);
-        Note note4 = createAndSaveNote("Note 4", "Content 4", user);
+        createAndSaveNote("Note 4", "Content 4", user);
         Thread.sleep(10);
-        Note note5 = createAndSaveNote("Note 5", "Content 5", user);
+        createAndSaveNote("Note 5", "Content 5", user);
         Thread.sleep(10);
 
         Pageable pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "createdAt"));
