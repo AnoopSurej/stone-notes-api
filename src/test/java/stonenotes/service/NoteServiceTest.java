@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.dto.NoteResponseDto;
+import stonenotes.exception.NoteNotFoundException;
 import stonenotes.model.Note;
 import stonenotes.model.User;
 import stonenotes.repository.NoteRepository;
@@ -20,6 +21,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -134,6 +136,19 @@ public class NoteServiceTest {
 
         verify(noteRepository).findByUserIdOrderByCreatedAtDesc(userId);
     }
+    @Test
+    void shouldReturnEmptyListWhenUserHasNoNotes() {
+        Long userId = 1L;
+        List<Note> emptyNotes = List.of();
+
+        when(noteRepository.findByUserIdOrderByCreatedAtDesc(userId)).thenReturn(emptyNotes);
+
+        List<NoteResponseDto> result = noteService.findNotesByUserId(userId);
+
+        assertThat(result).isEmpty();
+        verify(noteRepository).findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
 
     @Test
     void shouldReturnPaginatedUserNotesOrderedByCreatedAtDesc() {
@@ -175,5 +190,47 @@ public class NoteServiceTest {
         assertThat(result.getContent().get(1).getTitle()).isEqualTo("First Note");
 
         verify(noteRepository).findByUserIdOrderByCreatedAtDesc(userId, pageable);
+    }
+
+    @Test
+    void shouldReturnSingleNote() {
+        Long userId = 1L;
+
+        User user = new User();
+        user.setEmail("user@example.com");
+
+        Note note = new Note();
+        note.setUser(user);
+        note.setId(1L);
+        note.setTitle("Note Title");
+        note.setContent("Note content");
+        note.setCreatedAt(LocalDateTime.now());
+        note.setUpdatedAt(LocalDateTime.now());
+
+        when(noteRepository.findByIdAndUserId(1L, userId)).thenReturn(Optional.of(note));
+
+        NoteResponseDto result = noteService.findNoteByIdAndUserId(1L, userId);
+
+        assertNotNull(result);
+        assertThat(result.getTitle()).isEqualTo("Note Title");
+        assertThat(result.getContent()).isEqualTo("Note content");
+        assertNotNull(result.getCreatedAt());
+        assertNotNull(result.getUpdatedAt());
+
+        verify(noteRepository).findByIdAndUserId(1L,userId);
+    }
+
+    @Test
+    void shouldThrowNoteNotFoundExceptionWhenNoteNotFound() {
+        Long userId = 1L;
+        Long noteId = 999L;
+
+        when(noteRepository.findByIdAndUserId(noteId, userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> noteService.findNoteByIdAndUserId(noteId, userId))
+                .isInstanceOf(NoteNotFoundException.class)
+                .hasMessage("Note not found");
+
+        verify(noteRepository).findByIdAndUserId(noteId, userId);
     }
 }

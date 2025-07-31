@@ -12,6 +12,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import stonenotes.common.ApiResponse;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.dto.NoteResponseDto;
+import stonenotes.exception.NoteNotFoundException;
+import stonenotes.model.User;
 import stonenotes.service.NoteService;
 import stonenotes.service.UserService;
 
@@ -19,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -166,5 +169,62 @@ public class NoteControllerTest {
         assertEquals("User not found", ex.getMessage());
         verify(userService, times(1)).getUserIdByEmail(null);
         verify(noteService, never()).createNote(any(), any());
+    }
+
+    @Test
+    void shouldReturnNoteSuccessfully() {
+        String email = "user@example.com";
+        Long userId = 1L;
+        Authentication auth = mock(Authentication.class);
+
+        User user = new User();
+        user.setEmail(email);
+
+        Long noteId = 2L;
+        NoteResponseDto dto = new NoteResponseDto(noteId, "Note Title", "Note content", LocalDateTime.now(), LocalDateTime.now());
+
+        when(auth.getName()).thenReturn(email);
+        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(noteService.findNoteByIdAndUserId(noteId, userId)).thenReturn(dto);
+
+        ResponseEntity<ApiResponse<NoteResponseDto>> response = noteController.getNote(auth, noteId);
+        ApiResponse<NoteResponseDto> responseBody = response.getBody();
+
+        assertNotNull(responseBody);
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(responseBody.isSuccess());
+        assertEquals("Note retrieved successfully", responseBody.getMessage());
+
+        NoteResponseDto data = responseBody.getData();
+        assertEquals(data.getId(), noteId);
+        assertEquals(data.getTitle(), "Note Title");
+        assertEquals(data.getContent(), "Note content");
+        assertNotNull(data.getCreatedAt());
+        assertNotNull(data.getUpdatedAt());
+
+        verify(userService).getUserIdByEmail(email);
+        verify(noteService).findNoteByIdAndUserId(noteId, userId);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenNoteNotFound() {
+        String email = "user@example.com";
+        Long userId = 1L;
+        Authentication auth = mock(Authentication.class);
+
+        User user = new User();
+        user.setEmail(email);
+
+        Long noteId = 2L;
+
+        when(auth.getName()).thenReturn(email);
+        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(noteService.findNoteByIdAndUserId(noteId, userId)).thenThrow(
+                new NoteNotFoundException("Note not found")
+        );
+
+        assertThatThrownBy(() -> noteController.getNote(auth, noteId))
+                .isInstanceOf(NoteNotFoundException.class)
+                .hasMessage("Note not found");
     }
 }

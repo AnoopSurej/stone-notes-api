@@ -14,8 +14,6 @@ import stonenotes.dto.NoteResponseDto;
 import stonenotes.service.NoteService;
 import stonenotes.service.UserService;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api")
 public class NoteController {
@@ -52,6 +50,19 @@ public class NoteController {
         Page<NoteResponseDto> notesPage = noteService.findNotesByUserId(userId, pageable);
 
         ApiResponse<Page<NoteResponseDto>> response = ApiResponse.success(notesPage, "Notes retrieved successfully", 200);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/notes/{noteId}")
+    public ResponseEntity<ApiResponse<NoteResponseDto>> getNote(
+            Authentication authentication,
+            @PathVariable Long noteId) {
+        String email = authentication.getName();
+        Long userId = userService.getUserIdByEmail(email);
+
+        NoteResponseDto note = noteService.findNoteByIdAndUserId(noteId, userId);
+
+        ApiResponse<NoteResponseDto> response = ApiResponse.success(note, "Note retrieved successfully");
         return ResponseEntity.ok(response);
     }
 }

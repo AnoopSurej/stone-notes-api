@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.dto.NoteResponseDto;
+import stonenotes.exception.NoteNotFoundException;
 import stonenotes.model.Note;
 import stonenotes.model.User;
 import stonenotes.repository.NoteRepository;
@@ -51,6 +52,12 @@ public class NoteService {
     public Page<NoteResponseDto> findNotesByUserId(Long userId, Pageable pageable) {
         Page<Note> notePage = noteRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
         return notePage.map(this::convertToResponseDto);
+    }
+
+    public NoteResponseDto findNoteByIdAndUserId(Long id, Long userId) {
+        Note note = noteRepository.findByIdAndUserId(id, userId).orElseThrow(() -> new NoteNotFoundException("Note not found"));
+
+        return convertToResponseDto(note);
     }
 
     private NoteResponseDto convertToResponseDto(Note note) {
