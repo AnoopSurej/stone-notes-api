@@ -13,6 +13,7 @@ import stonenotes.builders.NoteResponseDtoBuilder;
 import stonenotes.common.ApiResponse;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.dto.NoteResponseDto;
+import stonenotes.dto.UpdateNoteDto;
 import stonenotes.exception.NoteNotFoundException;
 import stonenotes.service.NoteService;
 import stonenotes.service.UserService;
@@ -240,5 +241,105 @@ public class NoteControllerTest {
         assertThatThrownBy(() -> noteController.getNote(auth, noteId))
                 .isInstanceOf(NoteNotFoundException.class)
                 .hasMessage("Note not found");
+    }
+
+    @Test
+    void shouldUpdateNoteSuccessfully() {
+        String email = "user@example.com";
+        Long userId = 1L;
+        Long noteId = 1L;
+        Authentication auth = mock(Authentication.class);
+        UpdateNoteDto updateDto = new UpdateNoteDto("Updated Title", "Updated Content");
+
+        NoteResponseDto updatedNote = NoteResponseDtoBuilder.aNoteResponseDto()
+                .withId(noteId)
+                .withTitle("Updated Title")
+                .withContent("Updated Content")
+                .build();
+
+        when(auth.getName()).thenReturn(email);
+        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(noteService.updateNote(noteId, updateDto, userId)).thenReturn(updatedNote);
+
+        ResponseEntity<ApiResponse<NoteResponseDto>> response = noteController.updateNote(noteId, updateDto, auth);
+        ApiResponse<NoteResponseDto> responseBody = response.getBody();
+
+        assertNotNull(responseBody);
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(responseBody.isSuccess());
+        assertEquals("Note updated successfully", responseBody.getMessage());
+
+        NoteResponseDto data = responseBody.getData();
+        assertEquals(noteId, data.getId());
+        assertEquals("Updated Title", data.getTitle());
+        assertEquals("Updated Content", data.getContent());
+
+        verify(userService).getUserIdByEmail(email);
+        verify(noteService).updateNote(noteId, updateDto, userId);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingNonExistentNote() {
+        String email = "user@example.com";
+        Long userId = 1L;
+        Long noteId = 999L;
+        Authentication auth = mock(Authentication.class);
+        UpdateNoteDto updateDto = new UpdateNoteDto("Updated Title", "Updated Content");
+
+        when(auth.getName()).thenReturn(email);
+        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(noteService.updateNote(noteId, updateDto, userId)).thenThrow(
+                new NoteNotFoundException("Note not found")
+        );
+
+        assertThatThrownBy(() -> noteController.updateNote(noteId, updateDto, auth))
+                .isInstanceOf(NoteNotFoundException.class)
+                .hasMessage("Note not found");
+
+        verify(userService).getUserIdByEmail(email);
+        verify(noteService).updateNote(noteId, updateDto, userId);
+    }
+
+    @Test
+    void shouldDeleteNoteSuccessfully() {
+        String email = "user@example.com";
+        Long userId = 1L;
+        Long noteId = 1L;
+        Authentication auth = mock(Authentication.class);
+
+        when(auth.getName()).thenReturn(email);
+        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+
+        ResponseEntity<ApiResponse<Void>> response = noteController.deleteNote(noteId, auth);
+        ApiResponse<Void> responseBody = response.getBody();
+
+        assertNotNull(responseBody);
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(responseBody.isSuccess());
+        assertEquals("Note deleted successfully", responseBody.getMessage());
+        assertNull(responseBody.getData());
+
+        verify(userService).getUserIdByEmail(email);
+        verify(noteService).deleteNote(noteId, userId);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDeletingNonExistentNote() {
+        String email = "user@example.com";
+        Long userId = 1L;
+        Long noteId = 999L;
+        Authentication auth = mock(Authentication.class);
+
+        when(auth.getName()).thenReturn(email);
+        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        doThrow(new NoteNotFoundException("Note not found"))
+                .when(noteService).deleteNote(noteId, userId);
+
+        assertThatThrownBy(() -> noteController.deleteNote(noteId, auth))
+                .isInstanceOf(NoteNotFoundException.class)
+                .hasMessage("Note not found");
+
+        verify(userService).getUserIdByEmail(email);
+        verify(noteService).deleteNote(noteId, userId);
     }
 }

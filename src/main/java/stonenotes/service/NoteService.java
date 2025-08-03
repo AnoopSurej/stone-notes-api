@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.dto.NoteResponseDto;
+import stonenotes.dto.UpdateNoteDto;
 import stonenotes.exception.NoteNotFoundException;
 import stonenotes.model.Note;
 import stonenotes.model.User;
@@ -58,6 +59,24 @@ public class NoteService {
         Note note = noteRepository.findByIdAndUserId(id, userId).orElseThrow(() -> new NoteNotFoundException("Note not found"));
 
         return convertToResponseDto(note);
+    }
+
+    public NoteResponseDto updateNote(Long noteId, UpdateNoteDto updateDto, Long userId) {
+        Note note = noteRepository.findByIdAndUserId(noteId, userId)
+                .orElseThrow(() -> new NoteNotFoundException("Note not found"));
+
+        note.setTitle(updateDto.getTitle());
+        note.setContent(updateDto.getContent());
+
+        Note savedNote = noteRepository.save(note);
+        return convertToResponseDto(savedNote);
+    }
+
+    public void deleteNote(Long noteId, Long userId) {
+        Note note = noteRepository.findByIdAndUserId(noteId, userId)
+                .orElseThrow(() -> new NoteNotFoundException("Note not found"));
+
+        noteRepository.delete(note);
     }
 
     private NoteResponseDto convertToResponseDto(Note note) {

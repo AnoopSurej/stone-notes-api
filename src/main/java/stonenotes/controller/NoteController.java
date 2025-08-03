@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import stonenotes.common.ApiResponse;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.dto.NoteResponseDto;
+import stonenotes.dto.UpdateNoteDto;
 import stonenotes.service.NoteService;
 import stonenotes.service.UserService;
 
@@ -63,6 +64,33 @@ public class NoteController {
         NoteResponseDto note = noteService.findNoteByIdAndUserId(noteId, userId);
 
         ApiResponse<NoteResponseDto> response = ApiResponse.success(note, "Note retrieved successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/notes/{noteId}")
+    public ResponseEntity<ApiResponse<NoteResponseDto>> updateNote(
+            @PathVariable Long noteId,
+            @Valid @RequestBody UpdateNoteDto updateNoteDto,
+            Authentication authentication) {
+        String email = authentication.getName();
+        Long userId = userService.getUserIdByEmail(email);
+
+        NoteResponseDto updatedNote = noteService.updateNote(noteId, updateNoteDto, userId);
+
+        ApiResponse<NoteResponseDto> response = ApiResponse.success(updatedNote, "Note updated successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/notes/{noteId}")
+    public ResponseEntity<ApiResponse<Void>> deleteNote(
+            @PathVariable Long noteId,
+            Authentication authentication) {
+        String email = authentication.getName();
+        Long userId = userService.getUserIdByEmail(email);
+
+        noteService.deleteNote(noteId, userId);
+
+        ApiResponse<Void> response = ApiResponse.success(null, "Note deleted successfully");
         return ResponseEntity.ok(response);
     }
 }

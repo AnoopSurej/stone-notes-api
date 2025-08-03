@@ -6,9 +6,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
+import stonenotes.builders.NoteBuilder;
 import stonenotes.builders.UserBuilder;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.dto.NoteResponseDto;
+import stonenotes.dto.UpdateNoteDto;
 import stonenotes.exception.NoteNotFoundException;
 import stonenotes.model.Note;
 import stonenotes.model.User;
@@ -24,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,13 +50,12 @@ public class NoteServiceTest {
 
         User user = UserBuilder.aUser().build();
 
-        Note savedNote = new Note();
-        savedNote.setId(1L);
-        savedNote.setTitle("Test Note");
-        savedNote.setContent("Test content");
-        savedNote.setUser(user);
-        savedNote.setCreatedAt(LocalDateTime.now());
-        savedNote.setUpdatedAt(LocalDateTime.now());
+        Note savedNote = NoteBuilder.aNote()
+                .withId(1L)
+                .withTitle("Test Note")
+                .withContent("Test content")
+                .withUser(user)
+                .build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(noteRepository.save(any(Note.class))).thenReturn(savedNote);
@@ -107,21 +109,23 @@ public class NoteServiceTest {
         Long userId = 1L;
         User user = UserBuilder.aUser().build();
 
-        Note note1 = new Note();
-        note1.setId(1L);
-        note1.setTitle("First Note");
-        note1.setContent("First content");
-        note1.setUser(user);
-        note1.setCreatedAt(LocalDateTime.now().minusHours(2));
-        note1.setUpdatedAt(LocalDateTime.now().minusHours(2));
+        Note note1 = NoteBuilder.aNote()
+                .withId(1L)
+                .withTitle("First Note")
+                .withContent("First content")
+                .withUser(user)
+                .withCreatedAt(LocalDateTime.now().minusHours(2))
+                .withUpdatedAt(LocalDateTime.now().minusHours(2))
+                .build();
 
-        Note note2 = new Note();
-        note2.setId(1L);
-        note2.setTitle("Second Note");
-        note2.setContent("Second content");
-        note2.setUser(user);
-        note2.setCreatedAt(LocalDateTime.now().minusHours(1));
-        note2.setUpdatedAt(LocalDateTime.now().minusHours(2));
+        Note note2 = NoteBuilder.aNote()
+                .withId(2L)
+                .withTitle("Second Note")
+                .withContent("Second content")
+                .withUser(user)
+                .withCreatedAt(LocalDateTime.now().minusHours(1))
+                .withUpdatedAt(LocalDateTime.now().minusHours(1))
+                .build();
 
         List<Note> notes = Arrays.asList(note2, note1);
 
@@ -156,21 +160,23 @@ public class NoteServiceTest {
 
         User user = UserBuilder.aUser().build();
 
-        Note note1 = new Note();
-        note1.setId(1L);
-        note1.setTitle("First Note");
-        note1.setContent("First content");
-        note1.setUser(user);
-        note1.setCreatedAt(LocalDateTime.now().minusHours(2));
-        note1.setUpdatedAt(LocalDateTime.now().minusHours(2));
+        Note note1 = NoteBuilder.aNote()
+                .withId(1L)
+                .withTitle("First Note")
+                .withContent("First content")
+                .withUser(user)
+                .withCreatedAt(LocalDateTime.now().minusHours(2))
+                .withUpdatedAt(LocalDateTime.now().minusHours(2))
+                .build();
 
-        Note note2 = new Note();
-        note2.setId(2L);
-        note2.setTitle("Second Note");
-        note2.setContent("Second content");
-        note2.setUser(user);
-        note2.setCreatedAt(LocalDateTime.now().minusHours(1));
-        note2.setUpdatedAt(LocalDateTime.now().minusHours(1));
+        Note note2 = NoteBuilder.aNote()
+                .withId(2L)
+                .withTitle("Second Note")
+                .withContent("Second content")
+                .withUser(user)
+                .withCreatedAt(LocalDateTime.now().minusHours(1))
+                .withUpdatedAt(LocalDateTime.now().minusHours(1))
+                .build();
 
         List<Note> noteList = Arrays.asList(note2, note1);
         Page<Note> notePage = new PageImpl<>(noteList, pageable, 5);
@@ -196,13 +202,12 @@ public class NoteServiceTest {
 
         User user = UserBuilder.aUser().build();
 
-        Note note = new Note();
-        note.setUser(user);
-        note.setId(1L);
-        note.setTitle("Note Title");
-        note.setContent("Note content");
-        note.setCreatedAt(LocalDateTime.now());
-        note.setUpdatedAt(LocalDateTime.now());
+        Note note = NoteBuilder.aNote()
+                .withId(1L)
+                .withTitle("Note Title")
+                .withContent("Note content")
+                .withUser(user)
+                .build();
 
         when(noteRepository.findByIdAndUserId(1L, userId)).thenReturn(Optional.of(note));
 
@@ -229,5 +234,108 @@ public class NoteServiceTest {
                 .hasMessage("Note not found");
 
         verify(noteRepository).findByIdAndUserId(noteId, userId);
+    }
+
+    @Test
+    void shouldUpdateNoteSuccessfully() {
+        Long userId = 1L;
+        Long noteId = 1L;
+        UpdateNoteDto updateDto = new UpdateNoteDto("Updated Title", "Updated content");
+
+        User user = UserBuilder.aUser()
+                .withEmail("test@example.com")
+                .withFirstName("Test")
+                .withLastName("User")
+                .build();
+
+        LocalDateTime originalTime = LocalDateTime.now().minusHours(1);
+        Note existingNote = NoteBuilder.aNote()
+                .withId(noteId)
+                .withTitle("Original Title")
+                .withContent("Original content")
+                .withUser(user)
+                .withCreatedAt(originalTime)
+                .withUpdatedAt(originalTime)
+                .build();
+
+        Note updatedNote = NoteBuilder.aNote()
+                .withId(noteId)
+                .withTitle("Updated Title")
+                .withContent("Updated content")
+                .withUser(user)
+                .withCreatedAt(originalTime)
+                .withUpdatedAt(LocalDateTime.now())
+                .build();
+
+        when(noteRepository.findByIdAndUserId(noteId, userId)).thenReturn(Optional.of(existingNote));
+        when(noteRepository.save(any(Note.class))).thenReturn(updatedNote);
+
+        NoteResponseDto result = noteService.updateNote(noteId, updateDto, userId);
+
+        assertNotNull(result);
+        assertThat(result.getTitle()).isEqualTo("Updated Title");
+        assertThat(result.getContent()).isEqualTo("Updated content");
+        assertThat(result.getCreatedAt()).isEqualTo(existingNote.getCreatedAt());
+        assertThat(result.getUpdatedAt()).isAfter(existingNote.getUpdatedAt());
+
+        verify(noteRepository).findByIdAndUserId(noteId, userId);
+        verify(noteRepository).save(any(Note.class));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingNonExistentNote() {
+        Long userId = 1L;
+        Long noteId = 999L;
+        UpdateNoteDto updateDto = new UpdateNoteDto("Updated Title", "Updated content");
+
+        when(noteRepository.findByIdAndUserId(noteId, userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> noteService.updateNote(noteId, updateDto, userId))
+                .isInstanceOf(NoteNotFoundException.class)
+                .hasMessage("Note not found");
+
+        verify(noteRepository).findByIdAndUserId(noteId, userId);
+        verify(noteRepository, never()).save(any(Note.class));
+    }
+
+    @Test
+    void shouldDeleteNoteSuccessfully() {
+        Long userId = 1L;
+        Long noteId = 1L;
+
+        User user = UserBuilder.aUser()
+                .withEmail("test@example.com")
+                .withFirstName("Test")
+                .withLastName("User")
+                .build();
+
+        Note note = NoteBuilder.aNote()
+                .withId(noteId)
+                .withTitle("Note to delete")
+                .withContent("Content to delete")
+                .withUser(user)
+                .build();
+
+        when(noteRepository.findByIdAndUserId(noteId, userId)).thenReturn(Optional.of(note));
+
+        noteService.deleteNote(noteId, userId);
+
+        verify(noteRepository).findByIdAndUserId(noteId, userId);
+        verify(noteRepository).delete(note);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDeletingNonExistentNote() {
+        Long userId = 1L;
+        Long noteId = 999L;
+
+        when(noteRepository.findByIdAndUserId(noteId, userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> noteService.deleteNote(noteId, userId))
+                .isInstanceOf(NoteNotFoundException.class)
+                .hasMessage("Note not found");
+
+        verify(noteRepository).findByIdAndUserId(noteId, userId);
+        verify(noteRepository, never()).delete(any(Note.class));
     }
 }

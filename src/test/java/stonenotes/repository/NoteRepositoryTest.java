@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import stonenotes.builders.NoteBuilder;
 import stonenotes.builders.UserBuilder;
 import stonenotes.model.User;
 import stonenotes.model.Note;
@@ -36,18 +37,19 @@ class NoteRepositoryTest {
     }
 
     private Note createNote(String title, String content, User user) {
-        Note note = new Note();
-        note.setTitle(title);
-        note.setContent(content);
-        note.setUser(user);
-        return note;
+        return NoteBuilder.aNote()
+                .withTitle(title)
+                .withContent(content)
+                .withUser(user)
+                .build();
     }
 
     private void createAndSaveNote(String title, String content, User user) {
-        Note note = new Note();
-        note.setTitle(title);
-        note.setContent(content);
-        note.setUser(user);
+        Note note = NoteBuilder.aNote()
+                .withTitle(title)
+                .withContent(content)
+                .withUser(user)
+                .build();
         testEntityManager.persistAndFlush(note);
     }
 
