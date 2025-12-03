@@ -34,3 +34,8 @@ build/
 
 ### Secrets ###
 **/src/main/resources/application-local.properties
+
+
+### Environment Variables ###
+.envrc
+.env

@@ -31,7 +31,7 @@ public class JwtTokenProviderTest {
     void setup() {
         String testSecret = "thisIsATestSecretKeyWhichNeedsToBeLongEnoughForHS256Algorithm";
         ReflectionTestUtils.setField(jwtTokenProvider, "secretKeyString", testSecret);
-        ReflectionTestUtils.setField(jwtTokenProvider, "expirationTime", 86400000L);
+        ReflectionTestUtils.setField(jwtTokenProvider, "expirationTimeMillis", 86400000L);
     }
 
     @Test
