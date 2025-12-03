@@ -21,13 +21,13 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private final long expirationTime = 86400000;
+    private final long expirationTimeMillis = 30 * 60 * 1000; // 30 minutes
 
     public String generateToken(UserDetails userDetails) {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationTimeMillis))
                 .signWith(getSigningKey())
                 .compact();
     }
