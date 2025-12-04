@@ -27,15 +27,6 @@ class NoteRepositoryTest {
     @Autowired
     private TestEntityManager testEntityManager;
 
-    private User createUser(String email, String password, String firstName, String lastName) {
-        User user = new User();
-        user.setEmail(email);
-        user.setPassword(password);
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        return user;
-    }
-
     private Note createNote(String title, String content, User user) {
         return NoteBuilder.aNote()
                 .withTitle(title)
