@@ -18,8 +18,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+
+import stonenotes.exception.RefreshTokenExpiredException;
 
 @ExtendWith(MockitoExtension.class)
 public class RefreshTokenServiceTest {
@@ -146,5 +147,65 @@ public class RefreshTokenServiceTest {
         assertThat(refreshToken.getUser().getEmail()).isEqualTo("test@example.com");
         assertThat(refreshToken.getUser().getFirstName()).isEqualTo("Jane");
         assertThat(refreshToken.getUser().getLastName()).isEqualTo("Smith");
+    }
+
+    @Test
+    void shouldFindRefreshTokenByTokenString() {
+        String tokenString = "test-token-123";
+        User user = UserBuilder.aUser().build();
+        RefreshToken expectedToken = new RefreshToken();
+        expectedToken.setToken(tokenString);
+        expectedToken.setUser(user);
+        expectedToken.setExpiryDate(Instant.now().plusSeconds(3600));
+
+        when(refreshTokenRepository.findByToken(tokenString)).thenReturn(Optional.of(expectedToken));
+
+        Optional<RefreshToken> result = refreshTokenService.findByToken(tokenString);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getToken()).isEqualTo(tokenString);
+        assertThat(result.get().getUser()).isEqualTo(user);
+        verify(refreshTokenRepository).findByToken(tokenString);
+    }
+
+    @Test
+    void shouldReturnEmptyWhenTokenNotFound() {
+        String tokenString = "non-existent-token";
+
+        when(refreshTokenRepository.findByToken(tokenString)).thenReturn(Optional.empty());
+
+        Optional<RefreshToken> result = refreshTokenService.findByToken(tokenString);
+
+        assertThat(result).isEmpty();
+        verify(refreshTokenRepository).findByToken(tokenString);
+    }
+
+    @Test
+    void shouldReturnTokenWhenNotExpired() {
+        User user = UserBuilder.aUser().build();
+        RefreshToken token = new RefreshToken();
+        token.setToken("valid-token");
+        token.setUser(user);
+        token.setExpiryDate(Instant.now().plusSeconds(3600)); // Expires in 1 hour
+
+        RefreshToken result = refreshTokenService.verifyExpiration(token);
+
+        assertThat(result).isEqualTo(token);
+        verify(refreshTokenRepository, never()).delete(any());
+    }
+
+    @Test
+    void shouldDeleteTokenAndThrowExceptionWhenExpired() {
+        User user = UserBuilder.aUser().build();
+        RefreshToken token = new RefreshToken();
+        token.setToken("expired-token");
+        token.setUser(user);
+        token.setExpiryDate(Instant.now().minusSeconds(3600)); // Expired 1 hour ago
+
+        assertThatThrownBy(() -> refreshTokenService.verifyExpiration(token))
+                .isInstanceOf(RefreshTokenExpiredException.class)
+                .hasMessage("Refresh token expired. Please login again");
+
+        verify(refreshTokenRepository).delete(token);
     }
 }
