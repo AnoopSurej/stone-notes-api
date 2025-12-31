@@ -2,7 +2,11 @@ package stonenotes.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 public class UpdateNoteDto {
     @NotBlank(message = "Title is required")
     @Size(max = 255, message = "Title must be less than 255 characters")
@@ -18,19 +22,4 @@ public class UpdateNoteDto {
         this.content = content;
     }
 
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
 }

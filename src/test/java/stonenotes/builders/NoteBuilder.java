@@ -1,7 +1,6 @@
 package stonenotes.builders;
 
 import stonenotes.model.Note;
-import stonenotes.model.User;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -12,7 +11,7 @@ public class NoteBuilder {
     private String content = "Note content " + UUID.randomUUID().toString().substring(0, 8);
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();
-    private User user;
+    private String userId;
 
     private NoteBuilder() {}
 
@@ -45,8 +44,8 @@ public class NoteBuilder {
         return this;
     }
 
-    public NoteBuilder withUser(User user) {
-        this.user = user;
+    public NoteBuilder withUserId(String userId) {
+        this.userId = userId;
         return this;
     }
 
@@ -59,7 +58,7 @@ public class NoteBuilder {
         note.setContent(content);
         note.setCreatedAt(createdAt);
         note.setUpdatedAt(updatedAt);
-        note.setUser(user);
+        note.setUserId(userId);
         return note;
     }
 }

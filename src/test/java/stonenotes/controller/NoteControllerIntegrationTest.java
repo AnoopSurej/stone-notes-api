@@ -10,7 +10,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import stonenotes.dto.CreateNoteDto;
 import stonenotes.service.NoteService;
-import stonenotes.service.UserService;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -24,8 +23,6 @@ public class NoteControllerIntegrationTest {
     private ObjectMapper objectMapper;
     @MockitoBean
     private NoteService noteService;
-    @MockitoBean
-    private UserService userService;
 
     @Test
     void shouldReturnBadRequestWhenTitleIsBlank() throws Exception {

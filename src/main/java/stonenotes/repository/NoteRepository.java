@@ -11,9 +11,9 @@ import java.util.Optional;
 
 @Repository
 public interface NoteRepository extends JpaRepository<Note, Long> {
-    List<Note> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Note> findByUserIdOrderByCreatedAtDesc(String userId);
 
-    Optional<Note> findByIdAndUserId(Long id, Long userId);
+    Optional<Note> findByIdAndUserId(Long id, String userId);
 
-    Page<Note> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+    Page<Note> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 }

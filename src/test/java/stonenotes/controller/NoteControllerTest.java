@@ -7,8 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.jwt.Jwt;
 import stonenotes.builders.NoteResponseDtoBuilder;
 import stonenotes.common.ApiResponse;
 import stonenotes.dto.CreateNoteDto;
@@ -16,7 +15,6 @@ import stonenotes.dto.NoteResponseDto;
 import stonenotes.dto.UpdateNoteDto;
 import stonenotes.exception.NoteNotFoundException;
 import stonenotes.service.NoteService;
-import stonenotes.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -29,9 +27,6 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class NoteControllerTest {
     @Mock
-    private UserService userService;
-
-    @Mock
     private NoteService noteService;
 
     @InjectMocks
@@ -40,8 +35,7 @@ public class NoteControllerTest {
     @Test
     void shouldCreateNoteForValidUser() {
         // Given
-        String email = "user@example.com";
-        Long userId = 1L;
+        String userId = "keycloak-user-uuid-123";
         CreateNoteDto dto = new CreateNoteDto("Test Note", "Test Content");
         LocalDateTime now = LocalDateTime.now();
         NoteResponseDto expectedResponse = NoteResponseDtoBuilder.aNoteResponseDto()
@@ -50,32 +44,30 @@ public class NoteControllerTest {
                 .withCreatedAt(now)
                 .withUpdatedAt(now)
                 .build();
-        Authentication auth = mock(Authentication.class);
+        Jwt jwt = mock(Jwt.class);
 
-        when(auth.getName()).thenReturn(email);
-        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(jwt.getClaim("sub")).thenReturn(userId);
         when(noteService.createNote(dto, userId)).thenReturn(expectedResponse);
 
-        ResponseEntity<ApiResponse<NoteResponseDto>> response = noteController.createNote(dto, auth);
+        ResponseEntity<ApiResponse<NoteResponseDto>> response = noteController.createNote(dto, jwt);
         ApiResponse<NoteResponseDto> responseBody = response.getBody();
 
         assertNotNull(responseBody);
         assertEquals(201, response.getStatusCode().value());
         assertTrue(responseBody.isSuccess());
-        assertEquals(responseBody.getData().getTitle(), "Test Note");
-        assertEquals(responseBody.getData().getContent(), "Test Content");
-        assertEquals(responseBody.getData().getCreatedAt(), now);
-        assertEquals(responseBody.getData().getUpdatedAt(), now);
+        assertEquals("Test Note", responseBody.getData().getTitle());
+        assertEquals("Test Content", responseBody.getData().getContent());
+        assertEquals(now, responseBody.getData().getCreatedAt());
+        assertEquals(now, responseBody.getData().getUpdatedAt());
 
-        verify(userService, times(1)).getUserIdByEmail(email);
+        verify(jwt, times(1)).getClaim("sub");
         verify(noteService, times(1)).createNote(dto, userId);
     }
 
     @Test
     void shouldReturnPaginatedNotesSuccessfully() {
-        String email = "user@example.com";
-        Long userId = 1L;
-        Authentication auth = mock(Authentication.class);
+        String userId = "keycloak-user-uuid-123";
+        Jwt jwt = mock(Jwt.class);
         Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         NoteResponseDto note1 = NoteResponseDtoBuilder.aNoteResponseDto()
@@ -96,12 +88,11 @@ public class NoteControllerTest {
         List<NoteResponseDto> noteList = Arrays.asList(note2, note1);
         Page<NoteResponseDto> notePage = new PageImpl<>(noteList, pageable, 5);
 
-        when(auth.getName()).thenReturn(email);
-        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(jwt.getClaim("sub")).thenReturn(userId);
         when(noteService.findNotesByUserId(userId, pageable)).thenReturn(notePage);
 
         ResponseEntity<ApiResponse<Page<NoteResponseDto>>> response = noteController.getNotes(
-                auth, 0, 2, "createdAt", "desc"
+                jwt, 0, 2, "createdAt", "desc"
         );
         ApiResponse<Page<NoteResponseDto>> responseBody = response.getBody();
 
@@ -117,81 +108,58 @@ public class NoteControllerTest {
         assertEquals(0, resultPage.getNumber());
         assertEquals("Second Note", resultPage.getContent().get(0).getTitle());
 
-        verify(userService, times(1)).getUserIdByEmail(email);
+        verify(jwt, times(1)).getClaim("sub");
         verify(noteService, times(1)).findNotesByUserId(userId, pageable);
     }
 
     @Test
-    void shouldThrowExceptionWhenUserNotFound() {
-        // Rare case: Should be caught by authentication filter
-        // Given
-        CreateNoteDto dto = new CreateNoteDto("Title", "Content");
-        Authentication auth = mock(Authentication.class);
-
-        when(auth.getName()).thenReturn("nonexistent@example.com");
-        when(userService.getUserIdByEmail("nonexistent@example.com")).thenThrow(new UsernameNotFoundException("User not found"));
-
-        UsernameNotFoundException ex = assertThrows(
-                UsernameNotFoundException.class,
-                () -> noteController.createNote(dto, auth)
-        );
-
-        assertEquals("User not found", ex.getMessage());
-
-        verify(userService, times(1)).getUserIdByEmail("nonexistent@example.com");
-        verify(noteService, never()).createNote(any(), any());
-    }
-
-    @Test
     void shouldThrowExceptionWhenNoteServiceFails() {
-        //Given
+        // Given
         CreateNoteDto dto = new CreateNoteDto("Test Note", "Test Content");
-        Authentication auth = mock(Authentication.class);
-        String email = "user@example.com";
-        Long userId = 1L;
+        String userId = "keycloak-user-uuid-123";
+        Jwt jwt = mock(Jwt.class);
 
-        when(auth.getName()).thenReturn(email);
-        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(jwt.getClaim("sub")).thenReturn(userId);
         when(noteService.createNote(dto, userId)).thenThrow(
                 new RuntimeException("Service temporarily unavailable")
         );
 
         RuntimeException ex = assertThrows(
                 RuntimeException.class,
-                () -> noteController.createNote(dto, auth)
+                () -> noteController.createNote(dto, jwt)
         );
 
-        assertEquals(ex.getMessage(), "Service temporarily unavailable");
-        verify(userService, times(1)).getUserIdByEmail(email);
+        assertEquals("Service temporarily unavailable", ex.getMessage());
+        verify(jwt, times(1)).getClaim("sub");
         verify(noteService, times(1)).createNote(dto, userId);
     }
 
     @Test
-    void shouldThrowExceptionWhenAuthenticationNameIsNull() {
-        // Rare case: Custom authentication implementation returns null
+    void shouldThrowExceptionWhenJwtClaimIsNull() {
+        // Edge case: JWT sub claim is null
         // Given
         CreateNoteDto dto = new CreateNoteDto("Test Note", "Test Content");
-        Authentication auth = mock(Authentication.class);
+        Jwt jwt = mock(Jwt.class);
 
-        when(auth.getName()).thenReturn(null);
-        when(userService.getUserIdByEmail(null))
-                .thenThrow(new UsernameNotFoundException("User not found"));
-
-        UsernameNotFoundException ex = assertThrows(
-                UsernameNotFoundException.class,
-                () -> noteController.createNote(dto, auth)
+        when(jwt.getClaim("sub")).thenReturn(null);
+        when(noteService.createNote(dto, null)).thenThrow(
+                new RuntimeException("User ID cannot be null")
         );
 
-        assertEquals("User not found", ex.getMessage());
-        verify(userService, times(1)).getUserIdByEmail(null);
-        verify(noteService, never()).createNote(any(), any());
+        RuntimeException ex = assertThrows(
+                RuntimeException.class,
+                () -> noteController.createNote(dto, jwt)
+        );
+
+        assertEquals("User ID cannot be null", ex.getMessage());
+        verify(jwt, times(1)).getClaim("sub");
+        verify(noteService, times(1)).createNote(dto, null);
     }
 
     @Test
     void shouldReturnNoteSuccessfully() {
-        String email = "user@example.com";
-        Long userId = 1L;
-        Authentication auth = mock(Authentication.class);
+        String userId = "keycloak-user-uuid-123";
+        Jwt jwt = mock(Jwt.class);
 
         Long noteId = 2L;
         NoteResponseDto dto = NoteResponseDtoBuilder
@@ -201,11 +169,10 @@ public class NoteControllerTest {
                 .withContent("Note content")
                 .build();
 
-        when(auth.getName()).thenReturn(email);
-        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(jwt.getClaim("sub")).thenReturn(userId);
         when(noteService.findNoteByIdAndUserId(noteId, userId)).thenReturn(dto);
 
-        ResponseEntity<ApiResponse<NoteResponseDto>> response = noteController.getNote(auth, noteId);
+        ResponseEntity<ApiResponse<NoteResponseDto>> response = noteController.getNote(jwt, noteId);
         ApiResponse<NoteResponseDto> responseBody = response.getBody();
 
         assertNotNull(responseBody);
@@ -214,41 +181,38 @@ public class NoteControllerTest {
         assertEquals("Note retrieved successfully", responseBody.getMessage());
 
         NoteResponseDto data = responseBody.getData();
-        assertEquals(data.getId(), noteId);
-        assertEquals(data.getTitle(), "Note Title");
-        assertEquals(data.getContent(), "Note content");
+        assertEquals(noteId, data.getId());
+        assertEquals("Note Title", data.getTitle());
+        assertEquals("Note content", data.getContent());
         assertNotNull(data.getCreatedAt());
         assertNotNull(data.getUpdatedAt());
 
-        verify(userService).getUserIdByEmail(email);
+        verify(jwt).getClaim("sub");
         verify(noteService).findNoteByIdAndUserId(noteId, userId);
     }
 
     @Test
     void shouldThrowExceptionWhenNoteNotFound() {
-        String email = "user@example.com";
-        Long userId = 1L;
-        Authentication auth = mock(Authentication.class);
+        String userId = "keycloak-user-uuid-123";
+        Jwt jwt = mock(Jwt.class);
 
         Long noteId = 2L;
 
-        when(auth.getName()).thenReturn(email);
-        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(jwt.getClaim("sub")).thenReturn(userId);
         when(noteService.findNoteByIdAndUserId(noteId, userId)).thenThrow(
                 new NoteNotFoundException("Note not found")
         );
 
-        assertThatThrownBy(() -> noteController.getNote(auth, noteId))
+        assertThatThrownBy(() -> noteController.getNote(jwt, noteId))
                 .isInstanceOf(NoteNotFoundException.class)
                 .hasMessage("Note not found");
     }
 
     @Test
     void shouldUpdateNoteSuccessfully() {
-        String email = "user@example.com";
-        Long userId = 1L;
+        String userId = "keycloak-user-uuid-123";
         Long noteId = 1L;
-        Authentication auth = mock(Authentication.class);
+        Jwt jwt = mock(Jwt.class);
         UpdateNoteDto updateDto = new UpdateNoteDto("Updated Title", "Updated Content");
 
         NoteResponseDto updatedNote = NoteResponseDtoBuilder.aNoteResponseDto()
@@ -257,11 +221,10 @@ public class NoteControllerTest {
                 .withContent("Updated Content")
                 .build();
 
-        when(auth.getName()).thenReturn(email);
-        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(jwt.getClaim("sub")).thenReturn(userId);
         when(noteService.updateNote(noteId, updateDto, userId)).thenReturn(updatedNote);
 
-        ResponseEntity<ApiResponse<NoteResponseDto>> response = noteController.updateNote(noteId, updateDto, auth);
+        ResponseEntity<ApiResponse<NoteResponseDto>> response = noteController.updateNote(noteId, updateDto, jwt);
         ApiResponse<NoteResponseDto> responseBody = response.getBody();
 
         assertNotNull(responseBody);
@@ -274,43 +237,39 @@ public class NoteControllerTest {
         assertEquals("Updated Title", data.getTitle());
         assertEquals("Updated Content", data.getContent());
 
-        verify(userService).getUserIdByEmail(email);
+        verify(jwt).getClaim("sub");
         verify(noteService).updateNote(noteId, updateDto, userId);
     }
 
     @Test
     void shouldThrowExceptionWhenUpdatingNonExistentNote() {
-        String email = "user@example.com";
-        Long userId = 1L;
+        String userId = "keycloak-user-uuid-123";
         Long noteId = 999L;
-        Authentication auth = mock(Authentication.class);
+        Jwt jwt = mock(Jwt.class);
         UpdateNoteDto updateDto = new UpdateNoteDto("Updated Title", "Updated Content");
 
-        when(auth.getName()).thenReturn(email);
-        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(jwt.getClaim("sub")).thenReturn(userId);
         when(noteService.updateNote(noteId, updateDto, userId)).thenThrow(
                 new NoteNotFoundException("Note not found")
         );
 
-        assertThatThrownBy(() -> noteController.updateNote(noteId, updateDto, auth))
+        assertThatThrownBy(() -> noteController.updateNote(noteId, updateDto, jwt))
                 .isInstanceOf(NoteNotFoundException.class)
                 .hasMessage("Note not found");
 
-        verify(userService).getUserIdByEmail(email);
+        verify(jwt).getClaim("sub");
         verify(noteService).updateNote(noteId, updateDto, userId);
     }
 
     @Test
     void shouldDeleteNoteSuccessfully() {
-        String email = "user@example.com";
-        Long userId = 1L;
+        String userId = "keycloak-user-uuid-123";
         Long noteId = 1L;
-        Authentication auth = mock(Authentication.class);
+        Jwt jwt = mock(Jwt.class);
 
-        when(auth.getName()).thenReturn(email);
-        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(jwt.getClaim("sub")).thenReturn(userId);
 
-        ResponseEntity<ApiResponse<Void>> response = noteController.deleteNote(noteId, auth);
+        ResponseEntity<ApiResponse<Void>> response = noteController.deleteNote(noteId, jwt);
         ApiResponse<Void> responseBody = response.getBody();
 
         assertNotNull(responseBody);
@@ -319,27 +278,25 @@ public class NoteControllerTest {
         assertEquals("Note deleted successfully", responseBody.getMessage());
         assertNull(responseBody.getData());
 
-        verify(userService).getUserIdByEmail(email);
+        verify(jwt).getClaim("sub");
         verify(noteService).deleteNote(noteId, userId);
     }
 
     @Test
     void shouldThrowExceptionWhenDeletingNonExistentNote() {
-        String email = "user@example.com";
-        Long userId = 1L;
+        String userId = "keycloak-user-uuid-123";
         Long noteId = 999L;
-        Authentication auth = mock(Authentication.class);
+        Jwt jwt = mock(Jwt.class);
 
-        when(auth.getName()).thenReturn(email);
-        when(userService.getUserIdByEmail(email)).thenReturn(userId);
+        when(jwt.getClaim("sub")).thenReturn(userId);
         doThrow(new NoteNotFoundException("Note not found"))
                 .when(noteService).deleteNote(noteId, userId);
 
-        assertThatThrownBy(() -> noteController.deleteNote(noteId, auth))
+        assertThatThrownBy(() -> noteController.deleteNote(noteId, jwt))
                 .isInstanceOf(NoteNotFoundException.class)
                 .hasMessage("Note not found");
 
-        verify(userService).getUserIdByEmail(email);
+        verify(jwt).getClaim("sub");
         verify(noteService).deleteNote(noteId, userId);
     }
 }
