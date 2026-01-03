@@ -14,7 +14,7 @@ import stonenotes.exception.NoteNotFoundException;
 import stonenotes.model.Note;
 import stonenotes.repository.NoteRepository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -85,8 +85,8 @@ public class NoteServiceTest {
                 .withTitle("First Note")
                 .withContent("First content")
                 .withUserId(userId)
-                .withCreatedAt(LocalDateTime.now().minusHours(2))
-                .withUpdatedAt(LocalDateTime.now().minusHours(2))
+                .withCreatedAt(Instant.now().minusSeconds(7200))
+                .withUpdatedAt(Instant.now().minusSeconds(7200))
                 .build();
 
         Note note2 = NoteBuilder.aNote()
@@ -94,8 +94,8 @@ public class NoteServiceTest {
                 .withTitle("Second Note")
                 .withContent("Second content")
                 .withUserId(userId)
-                .withCreatedAt(LocalDateTime.now().minusHours(1))
-                .withUpdatedAt(LocalDateTime.now().minusHours(1))
+                .withCreatedAt(Instant.now().minusSeconds(3600))
+                .withUpdatedAt(Instant.now().minusSeconds(3600))
                 .build();
 
         List<Note> notes = Arrays.asList(note2, note1);
@@ -134,8 +134,8 @@ public class NoteServiceTest {
                 .withTitle("First Note")
                 .withContent("First content")
                 .withUserId(userId)
-                .withCreatedAt(LocalDateTime.now().minusHours(2))
-                .withUpdatedAt(LocalDateTime.now().minusHours(2))
+                .withCreatedAt(Instant.now().minusSeconds(7200))
+                .withUpdatedAt(Instant.now().minusSeconds(7200))
                 .build();
 
         Note note2 = NoteBuilder.aNote()
@@ -143,8 +143,8 @@ public class NoteServiceTest {
                 .withTitle("Second Note")
                 .withContent("Second content")
                 .withUserId(userId)
-                .withCreatedAt(LocalDateTime.now().minusHours(1))
-                .withUpdatedAt(LocalDateTime.now().minusHours(1))
+                .withCreatedAt(Instant.now().minusSeconds(3600))
+                .withUpdatedAt(Instant.now().minusSeconds(3600))
                 .build();
 
         List<Note> noteList = Arrays.asList(note2, note1);
@@ -209,7 +209,7 @@ public class NoteServiceTest {
         Long noteId = 1L;
         UpdateNoteDto updateDto = new UpdateNoteDto("Updated Title", "Updated content");
 
-        LocalDateTime originalTime = LocalDateTime.now().minusHours(1);
+        Instant originalTime = Instant.now().minusSeconds(3600);
         Note existingNote = NoteBuilder.aNote()
                 .withId(noteId)
                 .withTitle("Original Title")
@@ -225,7 +225,7 @@ public class NoteServiceTest {
                 .withContent("Updated content")
                 .withUserId(userId)
                 .withCreatedAt(originalTime)
-                .withUpdatedAt(LocalDateTime.now())
+                .withUpdatedAt(Instant.now())
                 .build();
 
         when(noteRepository.findByIdAndUserId(noteId, userId)).thenReturn(Optional.of(existingNote));

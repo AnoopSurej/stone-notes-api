@@ -2,7 +2,7 @@ package stonenotes.builders;
 
 import stonenotes.dto.NoteResponseDto;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -10,8 +10,8 @@ public class NoteResponseDtoBuilder {
     private Long id = ThreadLocalRandom.current().nextLong(1, 10000);
     private String title = "Note Title " + UUID.randomUUID().toString().substring(0, 8);
     private String content = "Note content " + UUID.randomUUID().toString().substring(0, 8);
-    private LocalDateTime createdAt = LocalDateTime.now();
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
+    private Instant updatedAt = Instant.now();
 
     private NoteResponseDtoBuilder() {}
 
@@ -32,12 +32,12 @@ public class NoteResponseDtoBuilder {
         return this;
     }
 
-    public NoteResponseDtoBuilder withCreatedAt(LocalDateTime createdAt) {
+    public NoteResponseDtoBuilder withCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
         return this;
     }
 
-    public NoteResponseDtoBuilder withUpdatedAt(LocalDateTime updatedAt) {
+    public NoteResponseDtoBuilder withUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
         return this;
     }

@@ -2,15 +2,15 @@ package stonenotes.builders;
 
 import stonenotes.model.Note;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public class NoteBuilder {
     private Long id = null;
     private String title = "Note Title " + UUID.randomUUID().toString().substring(0, 8);
     private String content = "Note content " + UUID.randomUUID().toString().substring(0, 8);
-    private LocalDateTime createdAt = LocalDateTime.now();
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private Instant createdAt = Instant.now();
+    private Instant updatedAt = Instant.now();
     private String userId;
 
     private NoteBuilder() {}
@@ -34,12 +34,12 @@ public class NoteBuilder {
         return this;
     }
 
-    public NoteBuilder withCreatedAt(LocalDateTime createdAt) {
+    public NoteBuilder withCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
         return this;
     }
 
-    public NoteBuilder withUpdatedAt(LocalDateTime updatedAt) {
+    public NoteBuilder withUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
         return this;
     }

@@ -16,7 +16,7 @@ import stonenotes.dto.UpdateNoteDto;
 import stonenotes.exception.NoteNotFoundException;
 import stonenotes.service.NoteService;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,7 +37,7 @@ public class NoteControllerTest {
         // Given
         String userId = "keycloak-user-uuid-123";
         CreateNoteDto dto = new CreateNoteDto("Test Note", "Test Content");
-        LocalDateTime now = LocalDateTime.now();
+        Instant now = Instant.now();
         NoteResponseDto expectedResponse = NoteResponseDtoBuilder.aNoteResponseDto()
                 .withTitle(dto.getTitle())
                 .withContent(dto.getContent())
@@ -74,15 +74,15 @@ public class NoteControllerTest {
                 .withId(1L)
                 .withTitle("First Note")
                 .withContent("First content")
-                .withCreatedAt(LocalDateTime.now().minusHours(2))
-                .withUpdatedAt(LocalDateTime.now().minusHours(2))
+                .withCreatedAt(Instant.now().minusSeconds(7200))
+                .withUpdatedAt(Instant.now().minusSeconds(7200))
                 .build();
         NoteResponseDto note2 = NoteResponseDtoBuilder.aNoteResponseDto()
                 .withId(2L)
                 .withTitle("Second Note")
                 .withContent("Second content")
-                .withCreatedAt(LocalDateTime.now().minusHours(1))
-                .withUpdatedAt(LocalDateTime.now().minusHours(1))
+                .withCreatedAt(Instant.now().minusSeconds(3600))
+                .withUpdatedAt(Instant.now().minusSeconds(3600))
                 .build();
 
         List<NoteResponseDto> noteList = Arrays.asList(note2, note1);
