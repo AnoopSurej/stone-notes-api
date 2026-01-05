@@ -15,5 +15,5 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     Optional<Note> findByIdAndUserId(Long id, String userId);
 
-    Page<Note> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
+    Page<Note> findByUserId(String userId, Pageable pageable);
 }

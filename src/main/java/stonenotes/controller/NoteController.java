@@ -15,6 +15,9 @@ import stonenotes.dto.NoteResponseDto;
 import stonenotes.dto.UpdateNoteDto;
 import stonenotes.service.NoteService;
 
+import java.util.Arrays;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api")
 public class NoteController {
@@ -41,6 +44,11 @@ public class NoteController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         String userId = jwt.getClaim("sub");
+
+        List<String> allowedSortFields = Arrays.asList("createdAt", "updatedAt", "title");
+        if(!allowedSortFields.contains(sortBy)) {
+            throw new IllegalArgumentException("Invalid sort field: " + sortBy);
+        }
 
         Sort.Direction direction = sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));

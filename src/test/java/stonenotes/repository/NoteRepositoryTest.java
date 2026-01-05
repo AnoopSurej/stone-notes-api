@@ -123,7 +123,7 @@ class NoteRepositoryTest {
 
         Pageable pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Page<Note> result = noteRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        Page<Note> result = noteRepository.findByUserId(userId, pageable);
 
         assertThat(result.getContent()).hasSize(3);
         assertThat(result.getTotalElements()).isEqualTo(5);
@@ -133,6 +133,36 @@ class NoteRepositoryTest {
 
         assertThat(result.getContent().get(0).getTitle()).isEqualTo("Note 5");
         assertThat(result.getContent().get(1).getTitle()).isEqualTo("Note 4");
+        assertThat(result.getContent().get(2).getTitle()).isEqualTo("Note 3");
+    }
+
+    @Test
+    void shouldReturnPaginatedNotesOrderedByCreatedAtAsc() throws InterruptedException {
+        String userId = "test_user_id";
+
+        createAndSaveNote("Note 1", "Content 1", userId);
+        Thread.sleep(10);
+        createAndSaveNote("Note 2", "Content 2", userId);
+        Thread.sleep(10);
+        createAndSaveNote("Note 3", "Content 3", userId);
+        Thread.sleep(10);
+        createAndSaveNote("Note 4", "Content 4", userId);
+        Thread.sleep(10);
+        createAndSaveNote("Note 5", "Content 5", userId);
+        Thread.sleep(10);
+
+        Pageable pageable = PageRequest.of(0, 3, Sort.by(Sort.Direction.ASC, "createdAt"));
+
+        Page<Note> result = noteRepository.findByUserId(userId, pageable);
+
+        assertThat(result.getContent()).hasSize(3);
+        assertThat(result.getTotalElements()).isEqualTo(5);
+        assertThat(result.getTotalPages()).isEqualTo(2);
+        assertThat(result.getNumber()).isEqualTo(0);
+        assertThat(result.getSize()).isEqualTo(3);
+
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("Note 1");
+        assertThat(result.getContent().get(1).getTitle()).isEqualTo("Note 2");
         assertThat(result.getContent().get(2).getTitle()).isEqualTo("Note 3");
     }
 }

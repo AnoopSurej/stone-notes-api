@@ -44,7 +44,7 @@ public class NoteService {
     }
 
     public Page<NoteResponseDto> findNotesByUserId(String userId, Pageable pageable) {
-        Page<Note> notePage = noteRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        Page<Note> notePage = noteRepository.findByUserId(userId, pageable);
         return notePage.map(this::convertToResponseDto);
     }
 

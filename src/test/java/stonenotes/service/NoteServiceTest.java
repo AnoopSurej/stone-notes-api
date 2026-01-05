@@ -150,7 +150,7 @@ public class NoteServiceTest {
         List<Note> noteList = Arrays.asList(note2, note1);
         Page<Note> notePage = new PageImpl<>(noteList, pageable, 5);
 
-        when(noteRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)).thenReturn(notePage);
+        when(noteRepository.findByUserId(userId, pageable)).thenReturn(notePage);
 
         Page<NoteResponseDto> result = noteService.findNotesByUserId(userId, pageable);
 
@@ -162,7 +162,7 @@ public class NoteServiceTest {
         assertThat(result.getContent().get(0).getTitle()).isEqualTo("Second Note");
         assertThat(result.getContent().get(1).getTitle()).isEqualTo("First Note");
 
-        verify(noteRepository).findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        verify(noteRepository).findByUserId(userId, pageable);
     }
 
     @Test

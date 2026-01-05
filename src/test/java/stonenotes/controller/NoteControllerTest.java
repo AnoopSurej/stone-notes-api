@@ -113,6 +113,234 @@ public class NoteControllerTest {
     }
 
     @Test
+    void shouldReturnNotesOrderedByCreatedAtAsc() {
+        String userId = "keycloak-user-uuid-123";
+        Jwt jwt = mock(Jwt.class);
+        Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "createdAt"));
+
+        NoteResponseDto note1 = NoteResponseDtoBuilder.aNoteResponseDto()
+                .withId(1L)
+                .withTitle("First Note")
+                .withContent("First content")
+                .withCreatedAt(Instant.now().minusSeconds(7200))
+                .withUpdatedAt(Instant.now().minusSeconds(7200))
+                .build();
+        NoteResponseDto note2 = NoteResponseDtoBuilder.aNoteResponseDto()
+                .withId(2L)
+                .withTitle("Second Note")
+                .withContent("Second content")
+                .withCreatedAt(Instant.now().minusSeconds(3600))
+                .withUpdatedAt(Instant.now().minusSeconds(3600))
+                .build();
+
+        List<NoteResponseDto> noteList = Arrays.asList(note1, note2);
+        Page<NoteResponseDto> notePage = new PageImpl<>(noteList, pageable, 2);
+
+        when(jwt.getClaim("sub")).thenReturn(userId);
+        when(noteService.findNotesByUserId(userId, pageable)).thenReturn(notePage);
+
+        ResponseEntity<ApiResponse<Page<NoteResponseDto>>> response = noteController.getNotes(
+                jwt, 0, 2, "createdAt", "asc"
+        );
+        ApiResponse<Page<NoteResponseDto>> responseBody = response.getBody();
+
+        assertNotNull(responseBody);
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(responseBody.isSuccess());
+
+        Page<NoteResponseDto> resultPage = responseBody.getData();
+        assertEquals(2, resultPage.getContent().size());
+        assertEquals("First Note", resultPage.getContent().get(0).getTitle());
+        assertEquals("Second Note", resultPage.getContent().get(1).getTitle());
+
+        verify(jwt, times(1)).getClaim("sub");
+        verify(noteService, times(1)).findNotesByUserId(userId, pageable);
+    }
+
+    @Test
+    void shouldReturnNotesOrderedByTitleAsc() {
+        String userId = "keycloak-user-uuid-123";
+        Jwt jwt = mock(Jwt.class);
+        Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "title"));
+
+        NoteResponseDto note1 = NoteResponseDtoBuilder.aNoteResponseDto()
+                .withId(1L)
+                .withTitle("A Note")
+                .build();
+        NoteResponseDto note2 = NoteResponseDtoBuilder.aNoteResponseDto()
+                .withId(2L)
+                .withTitle("B Note")
+                .build();
+
+        List<NoteResponseDto> noteList = Arrays.asList(note1, note2);
+        Page<NoteResponseDto> notePage = new PageImpl<>(noteList, pageable, 2);
+
+        when(jwt.getClaim("sub")).thenReturn(userId);
+        when(noteService.findNotesByUserId(userId, pageable)).thenReturn(notePage);
+
+        ResponseEntity<ApiResponse<Page<NoteResponseDto>>> response = noteController.getNotes(
+                jwt, 0, 2, "title", "asc"
+        );
+        ApiResponse<Page<NoteResponseDto>> responseBody = response.getBody();
+
+        assertNotNull(responseBody);
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(responseBody.isSuccess());
+
+        Page<NoteResponseDto> resultPage = responseBody.getData();
+        assertEquals(2, resultPage.getContent().size());
+        assertEquals("A Note", resultPage.getContent().get(0).getTitle());
+        assertEquals("B Note", resultPage.getContent().get(1).getTitle());
+
+        verify(jwt, times(1)).getClaim("sub");
+        verify(noteService, times(1)).findNotesByUserId(userId, pageable);
+    }
+
+    @Test
+    void shouldReturnNotesOrderedByTitleDesc() {
+        String userId = "keycloak-user-uuid-123";
+        Jwt jwt = mock(Jwt.class);
+        Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "title"));
+
+        NoteResponseDto note1 = NoteResponseDtoBuilder.aNoteResponseDto()
+                .withId(1L)
+                .withTitle("Z Note")
+                .build();
+        NoteResponseDto note2 = NoteResponseDtoBuilder.aNoteResponseDto()
+                .withId(2L)
+                .withTitle("Y Note")
+                .build();
+
+        List<NoteResponseDto> noteList = Arrays.asList(note1, note2);
+        Page<NoteResponseDto> notePage = new PageImpl<>(noteList, pageable, 2);
+
+        when(jwt.getClaim("sub")).thenReturn(userId);
+        when(noteService.findNotesByUserId(userId, pageable)).thenReturn(notePage);
+
+        ResponseEntity<ApiResponse<Page<NoteResponseDto>>> response = noteController.getNotes(
+                jwt, 0, 2, "title", "desc"
+        );
+        ApiResponse<Page<NoteResponseDto>> responseBody = response.getBody();
+
+        assertNotNull(responseBody);
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(responseBody.isSuccess());
+
+        Page<NoteResponseDto> resultPage = responseBody.getData();
+        assertEquals(2, resultPage.getContent().size());
+        assertEquals("Z Note", resultPage.getContent().get(0).getTitle());
+        assertEquals("Y Note", resultPage.getContent().get(1).getTitle());
+
+        verify(jwt, times(1)).getClaim("sub");
+        verify(noteService, times(1)).findNotesByUserId(userId, pageable);
+    }
+
+    @Test
+    void shouldReturnNotesOrderedByUpdatedAtAsc() {
+        String userId = "keycloak-user-uuid-123";
+        Jwt jwt = mock(Jwt.class);
+        Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "updatedAt"));
+
+        NoteResponseDto note1 = NoteResponseDtoBuilder.aNoteResponseDto()
+                .withId(1L)
+                .withTitle("Older Update")
+                .withContent("Content 1")
+                .withCreatedAt(Instant.now().minusSeconds(7200))
+                .withUpdatedAt(Instant.now().minusSeconds(3600))
+                .build();
+        NoteResponseDto note2 = NoteResponseDtoBuilder.aNoteResponseDto()
+                .withId(2L)
+                .withTitle("Recent Update")
+                .withContent("Content 2")
+                .withCreatedAt(Instant.now().minusSeconds(7200))
+                .withUpdatedAt(Instant.now().minusSeconds(1800))
+                .build();
+
+        List<NoteResponseDto> noteList = Arrays.asList(note1, note2);
+        Page<NoteResponseDto> notePage = new PageImpl<>(noteList, pageable, 2);
+
+        when(jwt.getClaim("sub")).thenReturn(userId);
+        when(noteService.findNotesByUserId(userId, pageable)).thenReturn(notePage);
+
+        ResponseEntity<ApiResponse<Page<NoteResponseDto>>> response = noteController.getNotes(
+                jwt, 0, 2, "updatedAt", "asc"
+        );
+        ApiResponse<Page<NoteResponseDto>> responseBody = response.getBody();
+
+        assertNotNull(responseBody);
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(responseBody.isSuccess());
+
+        Page<NoteResponseDto> resultPage = responseBody.getData();
+        assertEquals(2, resultPage.getContent().size());
+        assertEquals("Older Update", resultPage.getContent().get(0).getTitle());
+        assertEquals("Recent Update", resultPage.getContent().get(1).getTitle());
+
+        verify(jwt, times(1)).getClaim("sub");
+        verify(noteService, times(1)).findNotesByUserId(userId, pageable);
+    }
+
+    @Test
+    void shouldReturnNotesOrderedByUpdatedAtDesc() {
+        String userId = "keycloak-user-uuid-123";
+        Jwt jwt = mock(Jwt.class);
+        Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "updatedAt"));
+
+        NoteResponseDto note1 = NoteResponseDtoBuilder.aNoteResponseDto()
+                .withId(1L)
+                .withTitle("Recent Update")
+                .withContent("Content 1")
+                .withCreatedAt(Instant.now().minusSeconds(7200))
+                .withUpdatedAt(Instant.now().minusSeconds(1800))
+                .build();
+        NoteResponseDto note2 = NoteResponseDtoBuilder.aNoteResponseDto()
+                .withId(2L)
+                .withTitle("Old Update")
+                .withContent("Content 2")
+                .withCreatedAt(Instant.now().minusSeconds(7200))
+                .withUpdatedAt(Instant.now().minusSeconds(3600))
+                .build();
+
+        List<NoteResponseDto> noteList = Arrays.asList(note1, note2);
+        Page<NoteResponseDto> notePage = new PageImpl<>(noteList, pageable, 2);
+
+        when(jwt.getClaim("sub")).thenReturn(userId);
+        when(noteService.findNotesByUserId(userId, pageable)).thenReturn(notePage);
+
+        ResponseEntity<ApiResponse<Page<NoteResponseDto>>> response = noteController.getNotes(
+                jwt, 0, 2, "updatedAt", "desc"
+        );
+        ApiResponse<Page<NoteResponseDto>> responseBody = response.getBody();
+
+        assertNotNull(responseBody);
+        assertEquals(200, response.getStatusCode().value());
+        assertTrue(responseBody.isSuccess());
+
+        Page<NoteResponseDto> resultPage = responseBody.getData();
+        assertEquals(2, resultPage.getContent().size());
+        assertEquals("Recent Update", resultPage.getContent().get(0).getTitle());
+        assertEquals("Old Update", resultPage.getContent().get(1).getTitle());
+
+        verify(jwt, times(1)).getClaim("sub");
+        verify(noteService, times(1)).findNotesByUserId(userId, pageable);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenSortByNotInAllowedSortFields() {
+        String userId = "keycloak-user-uuid-123";
+        Jwt jwt = mock(Jwt.class);
+        when(jwt.getClaim("sub")).thenReturn(userId);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> noteController.getNotes(jwt, 0, 2, "notInAllowedSortFields", "desc")
+        );
+
+        assertEquals("Invalid sort field: notInAllowedSortFields", ex.getMessage());
+        verify(jwt, times(1)).getClaim("sub");
+    }
+
+    @Test
     void shouldThrowExceptionWhenNoteServiceFails() {
         // Given
         CreateNoteDto dto = new CreateNoteDto("Test Note", "Test Content");
